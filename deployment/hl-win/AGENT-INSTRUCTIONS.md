@@ -9,7 +9,7 @@
 The `hl-win` host functions as the **stateful infrastructure server**:
 - **Within `hl-win` scope**:
   1. Stateful backing services: PostgreSQL 14 (`immich_postgres` with `pgvector`), Redis (`immich_redis`), automated backup container (`immich_db_backup`).
-  2. Physical storage of media assets (`UPLOAD_LOCATION`, e.g. `D:\Photos\Immich`).
+  2. Physical storage of media assets (`UPLOAD_LOCATION`, e.g. `I:\library`).
   3. Production execution of `immich-server` and `immich-machine-learning` when local development is inactive.
 - **OUTSIDE `hl-win` scope**:
   1. Source code modifications (all development occurs on the macOS workstation).
@@ -32,7 +32,7 @@ deployment/
 
 ### `.env` Configuration on `hl-win`
 ```dotenv
-UPLOAD_LOCATION=D:\Photos\Immich
+UPLOAD_LOCATION=I:\library
 DB_PASSWORD=your_secure_postgres_password
 DB_USERNAME=postgres
 DB_DATABASE_NAME=immich
@@ -118,7 +118,7 @@ To allow the Mac workstation direct access to the database and queue:
 
 ## 6. Hard Rules for Agents on `hl-win`
 
-1. ❌ **NEVER** modify or delete files inside `UPLOAD_LOCATION` (`D:\Photos\Immich`). All operations against media assets are strictly read-only.
+1. ❌ **NEVER** modify or delete files inside `UPLOAD_LOCATION` ( I:\\library ). All operations against media assets are strictly read-only.
 2. ❌ **NEVER** run `immich-server` on `hl-win` simultaneously with a local dev server on macOS when sharing the same Redis instance.
 3. ❌ **NEVER** run `docker compose down -v` (this deletes persistent `pgdata` volume). Use `docker compose stop` or `docker compose restart`.
 4. ❌ **NEVER** execute local `docker build` on `hl-win`. Image builds are managed centrally via GitHub Actions CI.
