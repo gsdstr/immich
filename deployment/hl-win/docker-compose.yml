@@ -1,0 +1,71 @@
+# Docker Compose configuration for hl-win (Windows Docker Desktop)
+# Supports two modes:
+#   1. Production/Full mode: runs all services including the custom immich-server container.
+#   2. Dev-Infra mode: runs only database, redis, and backups, leaving ports open for Mac dev.
+
+services:
+  database:
+    container_name: immich_postgres
+    image: ghcr.io/immich-app/immich-postgres:14-pgvector
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "0.0.0.0:5432:5432"
+    restart: always
+
+  redis:
+    container_name: immich_redis
+    image: valkey/valkey:8-alpine
+    ports:
+      - "0.0.0.0:6379:6379"
+    restart: always
+
+  immich-server:
+    container_name: immich_server
+    image: ${IMMICH_SERVER_IMAGE:-ghcr.io/immich-app/immich-server:release}
+    profiles: ["app"]
+    volumes:
+      - ${UPLOAD_LOCATION}:/usr/src/app/upload
+    env_file:
+      - .env
+    ports:
+      - "2283:2283"
+    depends_on:
+      - database
+      - redis
+    restart: always
+
+  immich-machine-learning:
+    container_name: immich_machine_learning
+    image: ghcr.io/immich-app/immich-machine-learning:release
+    profiles: ["app"]
+    volumes:
+      - model-cache:/cache
+    ports:
+      - "0.0.0.0:3003:3003"
+    restart: always
+
+  db-backup:
+    container_name: immich_db_backup
+    image: prodrigestivill/postgres-backup-local:14-alpine
+    environment:
+      POSTGRES_HOST: database
+      POSTGRES_CLUSTER: 'TRUE'
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      SCHEDULE: "0 5 * * *"
+      BACKUP_KEEP_DAYS: 7
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      - database
+    restart: always
+
+volumes:
+  pgdata:
+  model-cache:
